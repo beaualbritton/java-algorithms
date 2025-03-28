@@ -1,6 +1,5 @@
 /**
  * Beau Albritton
- * Algorithm Design & Analysis
  * 
  * 
  * Adjacency List Class

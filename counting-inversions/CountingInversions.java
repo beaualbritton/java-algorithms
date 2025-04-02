@@ -1,12 +1,64 @@
 
-
+import  java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import  java.util.Scanner;
 public class CountingInversions
 {
     public static void main(String[] args) {
 
-        int [] L = {1,5,4,8,10,2,6,9,12,11,3,7};
-        SortCountResult sorted = sortAndCount(L);
-        System.out.println(sorted.count);
+        //int [] L = {1,5,4,8,10,2,6,9,12,11,3,7};
+        //User input
+        Scanner userInput = new Scanner(System.in);
+        //Declaring variables for file validation
+        File readFile;
+        Scanner fileIn;
+
+        //Validating file is correct      
+        //Using while true loop, breaks after correct input.
+        //Not ideal, but was getting an error that readFile,Filein are potentially not initialized
+        //when using a while(!validated) where validated was a boolean flag
+        while(true){
+            System.out.println("Enter an input file to scan. Must include file extension: ");
+            String fileInput = userInput.nextLine();
+            try{
+                //Initializing file & reader objects for later parsing
+                readFile = new File(fileInput);
+                fileIn = new Scanner(readFile);
+                break;
+            //declaring a 'new File()'' will throw a FileNotFoundException when a filepath is incorrectly input, so catch any potential exception
+            }catch(FileNotFoundException error)
+            {
+                System.out.println("File not found. Check if you have the correct file name & extension");
+            }
+        } 
+
+        ArrayList<ArrayList<Integer>> parsedLists = parseFile(fileIn);
+
+        try
+        {
+            FileWriter fileWriter = new FileWriter("output.txt");
+            for(ArrayList<Integer> a : parsedLists)
+            {
+                int[] L  = new int[a.size()];
+                for(int i = 0; i < a.size(); ++i)
+                {
+                    L[i] = a.get(i);
+                }
+                SortCountResult sorted = sortAndCount(L);
+
+                String str = "Inversion count: " + sorted.count + ". Sorted Array: " + arraytoString(sorted.sortedArray) ;
+                System.out.println(str);
+                fileWriter.write(str);
+            }
+                fileWriter.close();
+            }
+        catch(IOException e)
+        {
+
+        }
     }
 
     public static SortCountResult sortAndCount(int[] L)
@@ -47,8 +99,8 @@ public class CountingInversions
         }
 
         //Just printing so I can trace
-        printArray(A);
-        printArray(B);
+        //printArray(A);
+        //printArray(B);
 
         //Inversion counts from next recursive call
         SortCountResult ra  = sortAndCount(A);
@@ -111,21 +163,46 @@ public class CountingInversions
             L[k] = B[j];
             ++k; ++j;
         }
-        printArray(L);
+        //printArray(L);
 
         return new SortCountResult(inversionCount, L);
     }
 
-    public static void printArray(int[] arr)
+    public static String arraytoString(int[] arr)
     {
-        System.out.print("{");
+        String str = ""; 
+        str += "{";
         for(int i = 0; i < arr.length; ++i)
         {
-            System.out.print(arr[i] + ", ");
+            str += "" + arr[i] + ", ";
         }
-        System.out.print("}\n");
+        str+="}\n";
+
+        return str;
+    }
+
+    public static ArrayList<ArrayList<Integer>> parseFile(Scanner fileIn)
+    {
+        ArrayList<ArrayList<Integer>> list = new ArrayList<>(0);
+        while (fileIn.hasNextLine())
+        {
+            ArrayList<Integer> lineList = new ArrayList<>(0);
+            String currentLine = fileIn.nextLine().trim();
+            Scanner lineScanner = new Scanner(currentLine);
+            
+            while (lineScanner.hasNextInt()) {
+                lineList.add(lineScanner.nextInt());
+            }
+            
+            // Check if we found any integers in this line
+            if (!lineList.isEmpty()) {
+                list.add(lineList);
+            }
+        }
+        return list;
     }
 }
+
 //Loose data structure that returns (int, int[])
 class SortCountResult
 {

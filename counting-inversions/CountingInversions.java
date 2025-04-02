@@ -1,15 +1,31 @@
+/**
+ * Beau Albritton 
+ * 
+ * CountingInversions.java
+ * 
+ * This class attempts to implement a recursive inversion counting algorithm in Java, using Merge Sort.
+ * 
+ * Program receives a filepath input from the user. Assuming the file contains an arbitrary amount of unsorted lists, and that one line contains one list. Separated by whitespace
+ * Validation is handled, and printed if any exceptions occur. File is parsed and contents are passed into a nested ArrayList<Integer>
+ * 
+ * Afterwards, for each unsorted list, the SortAndCount method is called and the results (Inversion count and Sorted List) are written to 'output.txt'
+ * 
+ */
 
-import  java.io.File;
+//Dependencies
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import  java.util.Scanner;
+import java.util.Scanner;
 public class CountingInversions
 {
+    /**
+     * main -- handles file input & output.
+     */
     public static void main(String[] args) {
 
-        //int [] L = {1,5,4,8,10,2,6,9,12,11,3,7};
         //User input
         Scanner userInput = new Scanner(System.in);
         //Declaring variables for file validation
@@ -34,36 +50,60 @@ public class CountingInversions
                 System.out.println("File not found. Check if you have the correct file name & extension");
             }
         } 
-
+        //Parsed list of nested ArrayList, with each individual list representing one line in the input file
         ArrayList<ArrayList<Integer>> parsedLists = parseFile(fileIn);
-
+        //Try/catch required for FileWriter
         try
         {
+            //Writing to output.txt
             FileWriter fileWriter = new FileWriter("output.txt");
-            for(ArrayList<Integer> a : parsedLists)
+            //looping through each individual list in parsedLists
+            for(ArrayList<Integer> currentList : parsedLists)
             {
-                int[] L  = new int[a.size()];
-                for(int i = 0; i < a.size(); ++i)
-                {
-                    L[i] = a.get(i);
-                }
-                SortCountResult sorted = sortAndCount(L);
+                int[] L  = new int[currentList.size()];
 
+                //copying contents to int[] array (easier indexing in merge-and-count)
+                for(int i = 0; i < currentList.size(); ++i)
+                {
+                    L[i] = currentList.get(i);
+                }
+                //Calling sortAndCount on new list, assigning it to sorted (SortCountResult object)
+                SortCountResult sorted = sortAndCount(L);
+                //String formatting for output.txt
                 String str = "Inversion count: " + sorted.count + ". Sorted Array: " + arraytoString(sorted.sortedArray) ;
+                //Printing file output for clarity
                 System.out.println(str);
+                //Writing string to file 
                 fileWriter.write(str);
             }
+            //close the file writer after all lists have been sorted and added to output.txt
                 fileWriter.close();
             }
+        //Catch and print to terminal     
         catch(IOException e)
         {
-
+            System.out.println("IO Error. Output not saved.");
         }
     }
 
+    /**
+     * sortAndCount recursively handles inversion counting and sorting for a given list L
+     * 
+     * following pseudocode:
+     * 
+     *  Sort-and-Count(L) {
+            if list L has one element
+                return 0 and the list L;
+            Divide the list into two halves A and B;
+            (rA, A) <- Sort-and-Count(A);
+            (rB, B) <- Sort-and-Count(B);
+            (r, L) <- Merge-and-Count(A, B);
+            return r = rA + rB + r and the sorted list L;
+        }
+     */
     public static SortCountResult sortAndCount(int[] L)
     {
-        //one member in L, return 0
+        //one member in L, return 0 and current list L
         if(L.length == 1)
             return new SortCountResult(0, L);
 
@@ -85,7 +125,7 @@ public class CountingInversions
             B = new int[(L.length/2) + 1];
         }   
 
-        //populating these new lists
+        //populating these new lists based on 1/2 size of L
         for(int i = 0; i < A.length; ++i)
         {
             A[i] = L[i];
@@ -98,61 +138,53 @@ public class CountingInversions
             B[j-A.length] = L[j];
         }
 
-        //Just printing so I can trace
-        //printArray(A);
-        //printArray(B);
 
         //Inversion counts from next recursive call
         SortCountResult ra  = sortAndCount(A);
         SortCountResult rb = sortAndCount(B);
         SortCountResult r = mergeAndCount(ra.sortedArray, rb.sortedArray);
 
-        //returning r + ra + rb (TODO: RETURN SORTED LIST FROM MERGE&COUNT)
-        return new SortCountResult(ra.count+rb.count+r.count,r.sortedArray);
+        //returning r + ra + rb and sortedArray L 
+        return new SortCountResult(ra.count + rb.count + r.count, r.sortedArray);
     }
     
     public static SortCountResult mergeAndCount(int[] A, int[] B)
     {
+        //New list to be merged, combined length of A and B
         int[] L = new int[A.length + B.length];
         int inversionCount = 0;
-        //inversion count 
-        for (int i = 0; i < A.length; ++i)
-        {
-            int currentNumA = A[i];
-            //Comparing if index at A[i] is Greater than B[j]
-            for (int j = 0; j < B.length; ++j)
-            {
-                int currentNumB = B[j];
-                //System.out.println(currentNumB);
-                if(currentNumA > currentNumB)
-                {
-                    //System.out.println(currentNumA + " " + currentNumB);
-                    ++inversionCount;
-                }
 
-            }
-        }
-
-        //TODO: implement merge sort x
-        //looping variables 
+        //looping variables i,j,k. i indexes through A. j indexes through B. k indexes through merged list L
         int i = 0,j = 0, k = 0;
+        /*
+         * merge sort loop, iterate through two separate lists A and B and merge them into L
+         */
         while(i < A.length && j < B.length)
         {
+            //Not an inversion, currently in order 
             if(A[i] <= B[j])
             {
                 L[k] = A[i];
+                //Increment indices 
                 ++k; ++i;
             }
+            //Inversion!
             else
             {
                 L[k] = B[j];
                 ++k; ++j;
-                //TODO: COUNT INVERSIONS MORE EFFICIENTLY 
+                //I figure that if these lists from the call prior are 'sorted'
+                /*
+                 * Here's my logic, if A and B are already sorted from the previous call (recursively)
+                 * then if A[i] > B[j] then all members in A after i (i+1 etc) must also be out of order.
+                 */
+                inversionCount += (A.length - i);
 
             }
         }
 
         //Now there is at least one element in each arrays A, B that hasn't been added to new list L
+        //Since the loop condition is && (both A and B). Only one loop will run after the first while breaks.
         while (i < A.length)
         {
             L[k] = A[i];
@@ -163,11 +195,12 @@ public class CountingInversions
             L[k] = B[j];
             ++k; ++j;
         }
-        //printArray(L);
-
+    
+        //Return this as both (int: inversion count and int[]: sorted list)
         return new SortCountResult(inversionCount, L);
     }
 
+    //Simple array to string for simple printing. Iterates and returns a string through all members in an array
     public static String arraytoString(int[] arr)
     {
         String str = ""; 
@@ -181,20 +214,32 @@ public class CountingInversions
         return str;
     }
 
+    /*
+     * parseFile() takes a Scanner object representing a file input by the user, and
+     * iterates over each line in the file. Each line represents a list. So, extract
+     * every integer in the given line and add it to the nested ArrayList<Integer> for
+     * later handling in main.
+     */
     public static ArrayList<ArrayList<Integer>> parseFile(Scanner fileIn)
     {
+        //nested list
         ArrayList<ArrayList<Integer>> list = new ArrayList<>(0);
+        //Checking if next line
         while (fileIn.hasNextLine())
         {
+            //sub list of nested list to be added after iteration of loop
             ArrayList<Integer> lineList = new ArrayList<>(0);
+            //remove unnecessary whitespace otherwise nextInt has errors
             String currentLine = fileIn.nextLine().trim();
+            //Scanning the line for integers
             Scanner lineScanner = new Scanner(currentLine);
             
+            //Adding each integer found to lineList. This was the best method I found to extract multiple digit integers.
             while (lineScanner.hasNextInt()) {
                 lineList.add(lineScanner.nextInt());
             }
             
-            // Check if we found any integers in this line
+            // Check if we found any integers in this line (ignore potentially empty lists)
             if (!lineList.isEmpty()) {
                 list.add(lineList);
             }
@@ -203,7 +248,7 @@ public class CountingInversions
     }
 }
 
-//Loose data structure that returns (int, int[])
+//wrapper that returns (int, int[]) 
 class SortCountResult
 {
     int count;

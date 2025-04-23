@@ -147,7 +147,10 @@ public class CountingInversions
         //returning r + ra + rb and sortedArray L 
         return new SortCountResult(ra.count + rb.count + r.count, r.sortedArray);
     }
-    
+    /**
+     * Implements merging to new array.
+     * Sources used: https://www.w3schools.com/dsa/dsa_algo_mergesort.php
+     */
     public static SortCountResult mergeAndCount(int[] A, int[] B)
     {
         //New list to be merged, combined length of A and B
